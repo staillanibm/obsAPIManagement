@@ -8,23 +8,21 @@ image:
 podSecurityContext: {}
   # fsGroup: 2000
 
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  #runAsNonRoot: true
+  #runAsUser: 1000
 
 
 ingress:
-  enabled: false
-  defaultHostname: devportal.mydomain.com
-  className: ""
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+  enabled: true
+  defaultHostname: devportal.local
+  className: "nginx"
+  tls:
+    - secretName: "tls-cert"
 
 resources: 
   devportalContainer:
@@ -43,9 +41,11 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
 
 devportal:
-  # -- HTTP listening port. Use on wM version 10.15 (default): `8083`, 11.0: `8080` 
+  # -- HTTP listening port. `8080` for version >= 11.x, otherwise `8083`
   port: 8080
 
 elasticsearch:
   deploy: true
   version: 8.12.2
+  defaultNodeSet:
+    count: 1

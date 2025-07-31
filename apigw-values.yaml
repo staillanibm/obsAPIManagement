@@ -8,97 +8,33 @@ image:
 podSecurityContext: {}
   # fsGroup: 2000
 
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  runAsNonRoot: true
+  #readOnlyRootFilesystem: true
+  #runAsUser: 1000
 
-
-# multiple ingresses for ui, admin, ext and rt
 ingresses:
   ui:
-    defaultHost: ""
+    defaultHost: "apigateway-ui.local"
     enabled: true
-    svcName: ""
-    svcPort: ""
     className: "nginx"
-    annotations:
-      nginx.ingress.kubernetes.io/affinity: "cookie"
-      nginx.ingress.kubernetes.io/proxy-body-size: 10m
-      nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-      nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
-      # nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-    hosts:
-      - host:
-        paths:
-          - path: /
-            pathType: Prefix
     tls:
-      - secretName:
-        hosts:
-        csiSecretProvider:
-        secretProviderEnabled: false
-        secretProviderSecretName:
+      - secretName: "tls-cert"
   rt:
-    defaultHost: ""
+    defaultHost: "apigateway-rt.local"
     enabled: true
-    svcName: ""
-    svcPort: ""
     className: "nginx"
-    annotations:
-      nginx.ingress.kubernetes.io/proxy-body-size: 10m
-      nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-      nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
-      # nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-    hosts:
-      - host:
-        paths:
-          - path: /gateway
-            pathType: Prefix
     tls:
-      - secretName:
-        hosts:
-        secretProviderEnabled: false
-        secretProviderSecretName:
+      - secretName: "tls-cert"
   admin:
-    defaultHost: ""
+    defaultHost: "apigateway-admin.local"
     enabled: true
-    svcName: ""
-    svcPort: ""
     className: "nginx"
-    annotations:
-      nginx.ingress.kubernetes.io/affinity: "cookie"
-      nginx.ingress.kubernetes.io/proxy-body-size: 10m
-      nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-      nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
-      # nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-    hosts:
-      - host:
-        paths:
-          - path: /
-            pathType: Prefix
     tls:
-      - secretName:
-        hosts:
-        secretProviderEnabled: false
-        secretProviderSecretName:
-
-# global ingress settings for tls secret name, cert and key
-ingress:
-  defaultDomain: my-domain.com
-  tls:
-    # -- default secret name for TLS. By default empty,
-    # will look for <release-name-apigateway->tls".
-    secretName: ""
-    cert: ""
-    key: ""
-    secretProviderEnabled: false
-    secretProviderName: ""
-    secretProviderClassName: ""
-    secretProviderParameters: {}
+      - secretName: "tls-cert"
 
 resources:
   apigwContainer:
@@ -127,7 +63,7 @@ metering:
 elasticsearch:
   deploy: true
   version: 8.17.3
-  storageClassName: "ocs-external-storagecluster-ceph-rbd"
+  storageClassName: "local-path"
 
   defaultNodeSet:
     count: 3
