@@ -48,10 +48,10 @@ securityContext:
 
 ingress:
   enabled: true
-  defaultHostname: msr.sttlab.local
+  defaultHostname: msr.local
   className: "nginx"
   hosts:
-    - host: "msr.sttlab.local"
+    - host: "msr.local"
       paths:
         - path: /
           pathType: Prefix
