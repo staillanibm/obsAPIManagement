@@ -1,4 +1,4 @@
-# Deployment of the webMathods API Management products using Helm
+# Deployment of the webMethods products using Helm
 
 ## Install the Helm charts
 
@@ -24,7 +24,7 @@ helm install elastic-operator elastic/eck-operator -n elastic-system --create-na
 kubectl create ns apigateway
 ```
 
-### Create the image pull secret
+### Create the image pull secret in this namespace
 
 ```
 kubectl create secret docker-registry regcred --docker-server=${WM_CR_SERVER} \
@@ -94,7 +94,7 @@ helm install elastic-operator elastic/eck-operator -n elastic-system --create-na
 kubectl create ns devportal
 ```
 
-### Create the image pull secret
+### Create the image pull secret in this namespace
 ```
 kubectl create secret docker-registry regcred --docker-server=${WM_CR_SERVER} \
     --docker-username=${WM_CR_USERNAME} --docker-password=${WM_CR_PASSWORD} -n devportal
@@ -121,8 +121,6 @@ Use this command to preview the kubernetes manifests before applying them using 
 helm template dev-portal-obs -n devportal webmethods/developerportal -f devportal-values.yaml > devportal-template.yaml
 ```
 
-helm template dev-portal-obs -n devportal $HOME/git/webmethods-helm-charts/developerportal/helm -f devportal-values.yaml > devportal-template.yaml
-
 ### Deploy the Developer Portal
 ```
 helm upgrade --install dev-portal-obs -n devportal webmethods/developerportal -f devportal-values.yaml
@@ -141,4 +139,65 @@ Note: the Helm chart does not include an init container that waits for the Elast
 ### Undeploy the Developer Portal (if needed)
 ```
 helm delete dev-portal-obs -n devportal 
+```
+
+## Install the Microservice Runtime (MSR)
+
+You would usually not deploy the MSR base product image "as is". The idea is to build custom images on top of this base image, with your integrations and all their dependencies.  
+The following therefore only provides some guidance to manage the Helm deployment of any MSR image, whether it's the base product image or a custom image.  
+
+### Create the integration namespace
+
+```
+kubectl create ns integration
+```
+
+### Create the image pull secret in this namespace
+```
+kubectl create secret docker-registry regcred --docker-server=${WM_CR_SERVER} \
+    --docker-username=${WM_CR_USERNAME} --docker-password=${WM_CR_PASSWORD} -n integration
+```
+
+### Create the TLS secret for the certificate exposed by the Ingress
+
+This secret is referenced in the ingress specified in the msr-values.yaml file.
+```
+kubectl create secret tls tls-cert \
+    --key="${TLS_PRIVATEKEY_FILE_PATH}" \
+    --cert="${TLS_PUBLICKEY_FILE_PATH}" -n integration
+```
+
+### Create a secret for the MSR
+
+It's meant to contain the Administrator password and various connection information to external resources, such as databases or APIs.  Here we only set the Administrator password.  
+```
+kubectl create secret generic msr-obs \
+  --from-literal=MSR_ADMIN_PASSWORD='Manage12345' \
+  -n integration
+```
+
+### Modify the msr-values.yaml file
+
+You could change the replicaCount, which is set to 1 here.  
+Min and max heap size could also be adjusted depending on the integrations that need to run in the microservice (but you need to ensure the resource memory limit is higher than the max heap size).  
+The ingress host name is set to msr.local, this would also have to be changed.  
+
+### Get the deployment template
+
+Use this command to preview the kubernetes manifests before applying them using Helm.
+```
+helm template msr-obs -n integration webmethods/microservicesruntime -f msr-values.yaml > msr-template.yaml
+```
+
+### Deploy the Developer Portal
+```
+helm upgrade --install msr-obs -n integration webmethods/microservicesruntime -f msr-values.yaml
+```
+
+The Administrator password is the one you defined earlier in the msr-obs secret (which I have set to "Manage12345" here).  
+Note that is you have more than 1 pod replica, you will not be able to connect to the MSR admin console with the current ingress and service configuration. You would need to specify session affinity (like what's done for the API Gateway and Developer Portal).  This is just a basic deployment here and the good practice is to segregate the admin console ports and the service ports: session affinity to the admin console ports, but usually not for the service ports.  
+
+### Undeploy the MSR (if needed)
+```
+helm delete msr-obs -n integration 
 ```
